@@ -1,0 +1,95 @@
+<%- include('layouts/dasboardHeader' ) -%>
+ <!-- Page Header -->
+ <header class="masthead" style="background-image: url('assets/img/signup-bg.jpg')">
+    <div class="container position-relative px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <div class="page-heading">
+                    <% if (messages.error_msg) { %>
+                        <div class="alert alert-danger" role="alert">
+                            <%= messages.error_msg %>
+                        </div>
+                    <% } %>
+
+                    <% if (messages.success_msg) { %>
+                        <div class="alert alert-success" role="alert">
+                            <%= messages.success_msg %>
+                        </div>
+                    <% } %>
+                    <!-- Signup Form -->
+                    <form id="signupForm" action="/signup" method="POST" style="display: none;">
+                        <p class="login_head">SIGN UP</p>
+                        <div class="form-floating mb-3">
+                            <input class="form-control" id="signupUsername" name="username" type="text" placeholder="Enter your username..." required />
+                            <label for="signupUsername">Username</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input class="form-control" id="signupPassword" name="password" type="password" placeholder="Enter your password..." required />
+                            <label for="signupPassword">Password</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input class="form-control" id="signupRepeatPassword" name="repeatPassword" type="password" placeholder="Repeat your password..." required />
+                            <label for="signupRepeatPassword">Repeat Password</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-select" id="userType" name="userType" required>
+                                <option value="Driver">Driver</option>
+                                <option value="Examiner">Examiner</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                            <label for="userType">User Type</label>
+                        </div>
+                        <button class="btn btn-primary text-uppercase" type="submit">Sign Up</button>
+                    </form>
+
+                    <!-- Login Form -->
+                    <form id="loginForm" action="/login" method="POST">
+                        <p class="login_head">LOGIN</p>
+                        <div class="form-floating mb-3">
+                            <input class="form-control" id="loginUsername" name="username" type="text" placeholder="Enter your username..." required />
+                            <label for="loginUsername">Username</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input class="form-control" id="loginPassword" name="password" type="password" placeholder="Enter your password..." required />
+                            <label for="loginPassword">Password</label>
+                        </div>
+                        <button class="btn btn-primary text-uppercase" type="submit">Login</button>
+                    </form>
+
+                    <!-- Toggle between forms -->
+                    <p class="mb-0 mt-3">
+                        <span id="signupLink">Don't have an account?<a href="#" style="color: white;">Sign Up</a> </span>
+                        <span id="loginLink" style="display: none;">Already have an account? <a href="#" style="color: white;">Login</a></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<%- include('layouts/footer' ) -%>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const signupForm = document.getElementById('signupForm');
+        const loginForm = document.getElementById('loginForm');
+        const signupLink = document.getElementById('signupLink');
+        const loginLink = document.getElementById('loginLink');
+
+        // Show signup form and hide login form
+        signupLink.addEventListener('click', function() {
+            signupForm.style.display = 'block';
+            loginForm.style.display = 'none';
+            signupLink.style.display = 'none';
+            loginLink.style.display = 'block';
+        });
+
+        // Show login form and hide signup form
+        loginLink.addEventListener('click', function() {
+            loginForm.style.display = 'block';
+            signupForm.style.display = 'none';
+            loginLink.style.display = 'none';
+            signupLink.style.display = 'block';
+        });
+    });
+</script>

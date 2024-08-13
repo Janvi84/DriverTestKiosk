@@ -1,0 +1,228 @@
+<%- include('layouts/layout') -%>
+
+<main>
+    <header class="masthead" style="background-image: url('assets/img/g2-bg.jpg')">
+        <div class="container position-relative px-4 px-lg-5">
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div class="col-md-10 col-lg-8 col-xl-7">
+                    <div class="site-heading">
+                        <h1>Test Appointments</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+      
+    <!-- Appointments List -->
+    <main class="mb-4">
+        <div class="container px-4 px-lg-5">
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div class="col-md-10 col-lg-8 col-xl-7">
+                    <h2 class="my-4">Booked Appointments for Drive Test</h2>
+                    
+                    <!-- Filter Form -->
+                    <form action="/examiner" method="get">
+                        <label for="testType"><strong>Filter by Test Type :</strong> </label>
+                        <select name="testType" id="testType" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            <option value="G" <%= selectedTestType === 'G' ? 'selected' : '' %>>G</option>
+                            <option value="G2" <%= selectedTestType === 'G2' ? 'selected' : '' %>>G2</option>
+                        </select>
+                    </form>
+                    <br><br>
+                    <% if (appointments && appointments.length) { %>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Test Type</th>
+                                    <th>Status</th>
+                                    <th>Action</th> <!-- New column for actions -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% appointments.forEach(appointment => { %>
+                                    <% appointment.bookedBy.forEach(driver => { %>
+                                        <tr>
+                                            <td><%= new Date(appointment.date).toDateString() %></td>
+                                            <td><%= appointment.time %></td>
+                                            <td><%= driver.testType %></td>
+                                            <td><%= appointment.isTimeSlotAvailable ? 'Available' : 'Booked' %></td>
+                                            <td>
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateModal" data-driver-id="<%= driver._id %>">Update</button>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    <% } else { %>
+                        <p>No appointments have been booked yet.</p>
+                    <% } %>
+                    
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add a modal for updating driver information -->
+    <div class="modal fade" id="updateModal" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateModalLabel">Update Driver Information</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="updateForm">
+                        <input type="hidden" id="driverId" name="driverId">
+                        
+                        <!-- Display driver details -->
+                        <div class="form-group">
+                            <label for="driverName">Name</label>
+                            <input type="text" id="driverName" class="form-control" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="carMake">Car Make</label>
+                            <input type="text" id="carMake" class="form-control" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="carModel">Car Model</label>
+                            <input type="text" id="carModel" class="form-control" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="carYear">Car Year</label>
+                            <input type="text" id="carYear" class="form-control" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="carPlatno">Car Plate Number</label>
+                            <input type="text" id="carPlatno" class="form-control" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="comment">Comment</label>
+                            <textarea id="comment" name="comment" class="form-control" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="result">Result</label>
+                            <select id="result" name="result" class="form-control">
+                                <option value="pass">Pass</option>
+                                <option value="fail">Fail</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveChanges">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Add the script to handle modal and AJAX request -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const updateForm = document.getElementById('updateForm');
+            const saveChangesButton = document.getElementById('saveChanges');
+
+            // Show the modal with driver details
+            function showModal(driverId) {
+                fetch(`/driver/${driverId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(driver => {
+                        document.getElementById('driverId').value = driver._id;
+                        document.getElementById('driverName').value = `${driver.firstname} ${driver.lastname}`;
+                        document.getElementById('carMake').value = driver.cardetails.make;
+                        document.getElementById('carModel').value = driver.cardetails.model;
+                        document.getElementById('carYear').value = driver.cardetails.year;
+                        document.getElementById('carPlatno').value = driver.cardetails.platno;
+                        document.getElementById('comment').value = driver.comment || '';
+                        document.getElementById('result').value = driver.testResult ? 'pass' : 'fail';
+                        $('#updateModal').modal('show');
+                    })
+                    .catch(error => console.error('Error fetching driver details:', error));
+            }
+
+            // Handle the save changes button click
+saveChangesButton.addEventListener('click', function() {
+    const formData = new FormData(updateForm);
+    fetch('/update', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+    })
+    .then(response => response.text())
+    .then(() => {
+        $('#updateModal').modal('hide');
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Driver information updated successfully!',
+        }).then(() => {
+            window.location.reload(); // Reload the page to see updated data
+        });
+    })
+    .catch(error => {
+        console.error('Error updating driver:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'There was an error updating the driver information.',
+        });
+    });
+});
+
+            // // Handle the save changes button click
+            // saveChangesButton.addEventListener('click', function() {
+            //     const formData = new FormData(updateForm);
+            //     fetch('/update', {
+            //         method: 'POST',
+            //         body: new URLSearchParams(formData)
+            //     })
+            //     .then(response => response.text())
+            //     .then(() => {
+            //         $('#updateModal').modal('hide');
+            //         window.location.reload(); // Reload the page to see updated data
+            //     })
+            //     .catch(error => console.error('Error updating driver:', error));
+            // });
+
+            // Add event listeners to update buttons
+            document.querySelectorAll('.btn-primary[data-bs-target="#updateModal"]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const driverId = this.getAttribute('data-driver-id');
+                    showModal(driverId);
+                });
+            });
+
+
+            function closeModal() {
+                $('#updateModal').modal('hide');
+            }
+
+        // Bind the close function to the X button
+        document.querySelector('.close').addEventListener('click', closeModal);
+        
+        // Optional: Bind the close function to the 'Close' button in the modal footer
+        document.querySelector('.btn-secondary').addEventListener('click', closeModal);
+        });
+    </script>
+    
+    <%- include('layouts/footer') -%>

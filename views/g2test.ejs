@@ -1,0 +1,328 @@
+<%- include('layouts/layout') -%>
+
+<header class="masthead" style="background-image: url('assets/img/g2-bg.jpg')">
+    <div class="container position-relative px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <div class="page-heading">
+                    <h1>Secure Your G2 Test Slot</h1>
+                    <span class="subheading">Book and pay for individual road tests online.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="mb-4">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <% if (user && user.firstname !== 'default' && user.lastname !== 'default' && user.licenseno !== 'default' && user.cardetails) { %>
+                            <% function capitalizeFirstLetter(string) { return string.charAt(0).toUpperCase() + string.slice(1); } %>
+                            <legend class="w-auto px-0"><b>Welcome <%= capitalizeFirstLetter(user.firstname) %> <%= capitalizeFirstLetter(user.lastname) %>,</b></legend>
+                            <br><br>
+
+                
+                
+    
+
+                <!-- Display user information -->
+                <div class="card">
+                        <div class="card-body">
+                         <legend class="w-auto px-0"><b>Personal Information</b></legend>
+                         <fieldset class="border p-4 mb-4 position-relative">
+                           <p class="card-text"><strong>First Name:</strong> <%= user.firstname %></p>
+                            <p class="card-text"><strong>Last Name:</strong> <%= user.lastname %></p>
+                            <p class="card-text"><strong>Licence Number:</strong> ****<%= user.licenseno.slice(-4) %></p>
+                            <p class="card-text"><strong>Age:</strong> <%= user.age %></p>
+                         </fieldset>
+                    </div>
+                    <div class="card-body">
+                        <legend class="w-auto px-0"><b>Car Information</b></legend>
+                        <fieldset class="border p-4 mb-4 position-relative">
+                            <p class="card-text"><strong>Make:</strong> <%= user.cardetails.make %></p>
+                            <p class="card-text"><strong>Model:</strong> <%= user.cardetails.model %></p>
+                            <p class="card-text"><strong>Year:</strong> <%= user.cardetails.year %></p>
+                            <p class="card-text"><strong>Plate Number:</strong> <%= user.cardetails.platno %></p>
+                        </fieldset>
+                    </div>
+                </div>
+
+               <!-- Display Test Result Section -->
+               <div class="card mt-4">
+                <div class="card-body">
+                    <legend class="w-auto px-0"><b>Test Result</b></legend>
+                    <fieldset class="border p-4 mb-4 position-relative">
+                        <p class="card-text"><strong>Test Type:</strong> <span id="test-type">Loading...</span></p>
+                        
+                        <p class="card-text"><strong>Result:</strong> <span id="test-result">Loading...</span></p>
+                        <p class="card-text"><strong>Comments:</strong> <span id="test-comment">Loading...</span></p>
+                    </fieldset>
+                </div>
+            </div> 
+             <!-- Date Picker and Available Slots -->
+                    <div class="mt-5">
+                        <form id="datePickerForm" action="/g2test/slots" method="post">
+                            <fieldset class="border p-4 mb-4 position-relative">
+                                <legend class="w-auto px-0"><b>Select Date for Appointment</b></legend>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="appointmentDate" type="date" name="appointmentDate" required>
+                                    <label for="appointmentDate">Appointment Date</label>
+                                    <div class="invalid-feedback">Appointment Date is required.</div>
+                                </div>
+                                <!-- Submit Button for Date Selection -->
+                                <button class="btn btn-primary text-uppercase" id="selectDateButton" type="submit">Select Date</button>
+                            </fieldset>
+                        </form>
+
+                        <!-- Available Slots Buttons (to be populated dynamically based on selection) -->
+                        <div class="mt-5" id="availableSlots">
+                            <!-- <h5>Available Slots:</h5> -->
+                            <div id="slotsContainer"></div>
+                        </div>
+                     </div>
+                <% } else { %>
+                    <p>Complete this form to book your road test online, receive email notifications about your test(s), and return at any time to review booking details.</p>
+                    <div class="my-5">
+                        <form id="g2TestForm" action="/submit" method="post" novalidate>
+                            <fieldset class="border p-4 mb-4 position-relative">
+                                <legend class="w-auto px-0"><b>Personal Information</b></legend>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="firstname" type="text" placeholder="Enter your first name..." pattern="[A-Za-z]+" name="firstname" required>
+                                    <label for="firstname">First Name</label>
+                                    <div class="invalid-feedback">First Name is required and should contain alphabets only.</div>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="lastname" type="text" placeholder="Enter your last name..." pattern="[A-Za-z]+" name="lastname" required>
+                                    <label for="lastname">Last Name</label>
+                                    <div class="invalid-feedback">Last Name is required and should contain alphabets only.</div>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="licenseno" type="text" placeholder="Enter licence number..." pattern="[A-Za-z0-9]{10}" name="licenseno" required>
+                                    <label for="licenseno">Licence Number</label>
+                                    <div class="invalid-feedback">Licence number is required and should contain exactly 10 alphanumeric characters.</div>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="age" type="number" placeholder="Enter your age..." min="18" name="age" required>
+                                    <label for="age">Age</label>
+                                    <div class="invalid-feedback">Age is required and should be 18 or older.</div>
+                                </div>
+                            </fieldset>
+                            <fieldset class="border p-4 mb-4 position-relative">
+                                <legend class="w-auto px-0"><b>Car Information</b></legend>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="carmake" type="text" placeholder="Enter your car make..." name="cardetails[make]" required>
+                                    <label for="carmake">Make</label>
+                                    <div class="invalid-feedback">Make is required.</div>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="carmodel" type="text" placeholder="Enter your car model..." name="cardetails[model]" required>
+                                    <label for="carmodel">Model</label>
+                                    <div class="invalid-feedback">Model is required.</div>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="year" type="number" placeholder="Enter your car year..." name="cardetails[year]" required>
+                                    <label for="year">Year</label>
+                                    <div class="invalid-feedback">Year is required.</div>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="platenumber" type="text" placeholder="Enter your car plate number..." pattern="[A-Za-z0-9]+" name="cardetails[platno]" required>
+                                    <label for="platenumber">Plate Number</label>
+                                    <div class="invalid-feedback">Plate number is required and should contain alphanumeric characters only.</div>
+                                </div>
+                                <div class="d-none" id="submitSuccessMessage">
+                                    <div class="text-center mb-3">
+                                        <div class="fw-bolder">Form submission successful!</div>
+                                    </div>
+                                </div>
+                                <div class="d-none" id="submitErrorMessage">
+                                    <div class="text-center text-danger mb-3">Error submitting form!</div>
+                                </div>
+                            </fieldset>
+                            <!-- Submit Button-->
+                            <button class="btn btn-primary text-uppercase" id="submitButton" type="submit">Submit</button>
+                        </form>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</main>
+
+<%- include('layouts/footer') -%>
+
+<script>
+    
+document.addEventListener('DOMContentLoaded', function() {
+    const datePickerForm = document.getElementById('datePickerForm');
+    const availableSlots = document.getElementById('availableSlots');
+    const slotsContainer = document.getElementById('slotsContainer');
+    const g2TestForm = document.getElementById('g2TestForm');
+
+    const appointmentDate = document.getElementById('appointmentDate');
+    const selectDateButton = document.getElementById('selectDateButton');
+ 
+
+function bookSlot(slotId,slotTime, appointmentDate) {
+    // Using SweetAlert for confirmation
+    Swal.fire({
+        title: 'Confirm Booking',
+        text: `Are you sure you want to book the appointment on ${appointmentDate} at ${slotTime}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, book it!',
+        cancelButtonText: 'No, cancel',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Send AJAX request to book the slot
+            fetch('/g2test/book', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ slotId, appointmentDate })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('Booked!', 'Your slot has been booked successfully.', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 5000);
+                } else {
+                    Swal.fire('Error!', 'Error booking slot: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error booking slot:', error);
+                Swal.fire('Error!', 'Error booking slot.', 'error');
+            });
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            Swal.fire('Cancelled', 'Your booking has been cancelled.', 'info');
+        }
+    });
+}
+
+if (datePickerForm) {
+    // Date Picker Form Submit
+    datePickerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const appointmentDate = document.getElementById('appointmentDate').value;
+
+        fetch('/g2test/slots', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ appointmentDate })
+        })
+        .then(response => response.json())
+        .then(slots => {
+            slotsContainer.innerHTML = '';
+
+            slots.forEach(slot => {
+                if (slot.isTimeSlotAvailable) {
+                    const slotButton = document.createElement('button');
+                    slotButton.classList.add('btn', 'btn-success', 'm-2');
+                    slotButton.textContent = slot.time;
+                    slotButton.dataset.slotId = slot._id;
+
+                    slotButton.addEventListener('click', function() {
+                        bookSlot(slot._id,slot.time, appointmentDate);
+                    });
+
+                    slotsContainer.appendChild(slotButton);
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching available slots:', error);
+        });
+    });
+}
+
+if (g2TestForm) {
+    // Client-Side Form Validation
+    g2TestForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+        let isValid = true;
+
+        // Clear previous validation errors
+        document.querySelectorAll('.is-invalid').forEach((el) => {
+            el.classList.remove('is-invalid');
+        });
+
+        // Validate function
+        function validateField(id, regex) {
+            const value = formData.get(id);
+            if (!value || !regex.test(value)) {
+                document.getElementById(id).classList.add('is-invalid');
+                isValid = false;
+            }
+        }
+
+        // Age Validation
+        function validateAge() {
+            const ageField = document.getElementById('age');
+            const ageValue = parseInt(ageField.value, 10);
+            if (isNaN(ageValue) || ageValue < 18) {
+                ageField.classList.add('is-invalid');
+                isValid = false;
+            }
+        }
+
+        validateField('firstname', /^[A-Za-z]+$/);
+        validateField('lastname', /^[A-Za-z]+$/);
+        validateField('licenseno', /^[A-Za-z0-9]{10}$/);
+        validateAge();
+        validateField('cardetails[make]', /.+/);
+        validateField('cardetails[model]', /.+/);
+        validateField('cardetails[year]', /^\d+$/);
+        validateField('cardetails[platno]', /^[A-Za-z0-9]+$/);
+
+        if (isValid) {
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    body: new URLSearchParams(formData)
+                });
+
+                if (response.ok) {
+                    document.getElementById('submitSuccessMessage').classList.remove('d-none');
+                    document.getElementById('submitErrorMessage').classList.add('d-none');
+                    setTimeout(() => window.location.href = '/logout', 2000);
+                    Swal.fire('Booked!', 'Your slot has been booked successfully.', 'success');
+                } else {
+                    document.getElementById('submitErrorMessage').classList.remove('d-none');
+                    document.getElementById('submitSuccessMessage').classList.add('d-none');
+                }
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                document.getElementById('submitErrorMessage').classList.remove('d-none');
+                document.getElementById('submitSuccessMessage').classList.add('d-none');
+            }
+        }
+    });
+}
+
+
+fetch('/g2test/results')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('test-type').innerText = data.testType;
+                    document.getElementById('test-result').innerText = data.testResult ? 'Passed' : 'Failed';
+                    document.getElementById('test-comment').innerText = data.comment || 'No comments available';
+                } else {
+                    document.getElementById('test-result').innerText = 'No data available for this user.';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching test results:', error);
+            });
+});
+
+
+</script>

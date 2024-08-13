@@ -1,0 +1,247 @@
+<%- include('layouts/layout') -%>
+
+<header class="masthead" style="background-image: url('assets/img/g2-bg.jpg')">
+    <div class="container position-relative px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <div class="page-heading">
+                    <h1>Secure Your G2 Test Slot</h1>
+                    <span class="subheading">Book and pay for individual road tests online.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="mb-4">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <% if (user && user.firstname !== 'default' && user.lastname !== 'default' && user.licenseno !== 'default' && user.cardetails) { %>
+                            <% function capitalizeFirstLetter(string) { return string.charAt(0).toUpperCase() + string.slice(1); } %>
+                            <legend class="w-auto px-0"><b>Welcome <%= capitalizeFirstLetter(user.firstname) %> <%= capitalizeFirstLetter(user.lastname) %>,</b></legend>
+                            <br><br>
+                    <!-- Display user information -->
+                <div class="card">
+                        <div class="card-body">
+                         <legend class="w-auto px-0"><b>Personal Information</b></legend>
+                         <fieldset class="border p-4 mb-4 position-relative">
+                           <p class="card-text"><strong>First Name:</strong> <%= user.firstname %></p>
+                            <p class="card-text"><strong>Last Name:</strong> <%= user.lastname %></p>
+                            <p class="card-text"><strong>Licence Number:</strong> ****<%= user.licenseno.slice(-4) %></p>
+                            <p class="card-text"><strong>Age:</strong> <%= user.age %></p>
+                         </fieldset>
+                    </div>
+                    <div class="card-body">
+                        <legend class="w-auto px-0"><b>Car Information</b></legend>
+                        <fieldset class="border p-4 mb-4 position-relative">
+                            <p class="card-text"><strong>Make:</strong> <%= user.cardetails.make %></p>
+                            <p class="card-text"><strong>Model:</strong> <%= user.cardetails.model %></p>
+                            <p class="card-text"><strong>Year:</strong> <%= user.cardetails.year %></p>
+                            <p class="card-text"><strong>Plate Number:</strong> <%= user.cardetails.platno %></p>
+                        </fieldset>
+                    </div>
+                </div>
+
+               
+             <!-- Date Picker and Available Slots -->
+                    <div class="mt-5">
+                        <form id="datePickerForm" action="/g2test/slots" method="POST">
+                            <div class="form-group">
+                                <label for="appointmentDate">Select a date for your G2 test:</label>
+                                <input type="date" id="appointmentDate" name="appointmentDate" class="form-control">
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-3">Check Available Slots</button>
+                        </form>
+                    </div>
+                    <div class="mt-5" id="availableSlots">
+                        <h5>Available Slots:</h5>
+                        <div id="slotsContainer"></div>
+                    </div>
+            
+            <% } else { %>
+                <!-- Display form for collecting user information -->
+                <div class="my-5">
+                    <h3 class="mb-4">Please provide your information for the G2 test:</h3>
+                    <form id="g2TestForm" action="/g2test/submit" method="POST">
+                        <div class="form-group">
+                            <label for="firstname">First Name:</label>
+                            <input type="text" id="firstname" name="firstname" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastname">Last Name:</label>
+                            <input type="text" id="lastname" name="lastname" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="licenseno">License Number:</label>
+                            <input type="text" id="licenseno" name="licenseno" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="age">Age:</label>
+                            <input type="number" id="age" name="age" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="make">Car Make:</label>
+                            <input type="text" id="make" name="cardetails[make]" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="model">Car Model:</label>
+                            <input type="text" id="model" name="cardetails[model]" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="year">Car Year:</label>
+                            <input type="number" id="year" name="cardetails[year]" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="platno">Car Plate Number:</label>
+                            <input type="text" id="platno" name="cardetails[platno]" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const datePickerForm = document.getElementById('datePickerForm');
+    const availableSlots = document.getElementById('availableSlots');
+    const slotsContainer = document.getElementById('slotsContainer');
+
+    datePickerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const appointmentDate = document.getElementById('appointmentDate').value;
+
+        // Send AJAX request to fetch available slots for the selected date
+        fetch('/g2test/slots', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ appointmentDate })
+        })
+        .then(response => response.json())
+        .then(slots => {
+            // Clear previous slots
+            slotsContainer.innerHTML = '';
+
+            // Display available slots as buttons
+            slots.forEach(slot => {
+                if (slot.isTimeSlotAvailable) {
+                    const slotButton = document.createElement('button');
+                    slotButton.classList.add('btn', 'btn-success', 'm-2');
+                    slotButton.textContent = slot.time;
+                    slotButton.dataset.slotId = slot._id;
+
+                    // Add event listener to book the slot
+                    slotButton.addEventListener('click', function() {
+                        bookSlot(slot._id, appointmentDate);
+                    });
+
+                    slotsContainer.appendChild(slotButton);
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching available slots:', error);
+        });
+    });
+
+    function bookSlot(slotId, appointmentDate) {
+        // Send AJAX request to book the slot
+        fetch('/g2test/book', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ slotId, appointmentDate })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Slot booked successfully!');
+                location.reload();
+            } else {
+                alert('Error booking slot: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error booking slot:', error);
+        });
+    }
+});
+</script>
+
+<%- include('layouts/footer') -%>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Controller function to get available slots for selected date
+const getAvailableSlots = async (req, res) => {
+    try {
+        const { appointmentDate } = req.body;
+
+        // Fetch appointments for the selected date from the database
+        const appointments = await Appointment.find({ date: appointmentDate });
+
+         // Format the appointments into a JSON response
+         const slots = appointments.map(appointment => ({
+            _id: appointment._id,
+            time: appointment.time,
+            isTimeSlotAvailable: appointment.isTimeSlotAvailable
+        }));
+
+        // Send the JSON response
+        res.json(slots);
+    } catch (error) {
+        console.error('Error fetching available slots:', error);
+        res.status(500).send('Error fetching available slots.');
+    }
+};
+
+// Controller function to book a slot
+const bookSlot = async (req, res) => {
+    try {
+        const { appointmentDate, slotId } = req.body;
+
+        // Fetch the appointment slot by ID
+        const appointment = await Appointment.findById(slotId);
+
+        if (!appointment) {
+            return res.status(404).json({ error: 'Slot not found' });
+        }
+
+        // Check if the slot is available
+        if (!appointment.isTimeSlotAvailable) {
+            return res.status(409).json({ error: 'Slot is not available' });
+        }
+
+        // Mark the slot as unavailable
+        appointment.isTimeSlotAvailable = false;
+        await appointment.save();
+
+        // Update the user with the booked appointment
+        const user = await User.findById(req.session.user.id);
+        user.appointmentId = appointment._id;
+        await user.save();
+
+        res.json({ success: true, message: 'Slot booked successfully' });
+    } catch (error) {
+        console.error('Error booking slot:', error);
+        res.status(500).json({ error: 'Error booking slot' });
+    }

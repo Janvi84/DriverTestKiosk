@@ -1,0 +1,187 @@
+<!-- views/appointment.ejs -->
+<%- include('layouts/layout') -%>
+<!-- Include SweetAlert -->
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+<header class="masthead" style="background-image: url('assets/img/appointment-bg.jpg')">
+    <div class="container position-relative px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <div class="page-heading">
+                    <h1>Manage Appointments</h1>
+                    <span class="subheading">View and manage upcoming appointments.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="mb-4">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <p>This page is accessible to admins for managing appointments.</p>
+                
+                <p>
+                    <strong>Note to Admins:</strong> You can add appointment slots for each date. Appointment slots can range from 9:00 AM to 2:00 PM at 30minute intervals. Please select the appropriate date and time slot.
+                </p>
+
+
+                 <!-- Check for success message and display SweetAlert -->
+                 <% if (success && success === 'true') { %>
+                    <script>
+                        swal('Success!', 'Appointment slot added successfully.', 'success');
+                    </script>
+                <% } %>
+                <div class="my-5">
+                    <form id="appointmentForm" action="/appointment/add" method="POST" novalidate>
+                        <fieldset class="border p-4 mb-4 position-relative">
+                            <legend class="w-auto px-0"><b>Add an appointment</b></legend>
+                            <div class="form-floating mb-3">
+                                <input class="form-control" id="date" type="date" name="date" required>
+                                <label for="date">Date</label>
+                                <div class="invalid-feedback">Appointment Date is required</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="time">Time</label>
+                                <div id="timeSlots" class="d-flex flex-wrap gap-3">
+                                    <% const times = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00"]; %>
+                                    <% times.forEach(time => { %>
+                                        <button type="button" class="btn btn-primary time-slot m-1" data-time="<%= time %>"><%= time %></button>
+                                    <% }); %>
+                                </div>
+                                <input type="hidden" name="time" id="timeInput" required>
+                                <div class="invalid-feedback">Appointment time is required</div>
+                            </div>
+                        </fieldset>
+                        
+                        <!-- Submit Button-->
+                        <button class="btn btn-primary text-uppercase" id="submitButton" type="submit">Make Appointment</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Display completed tests only if 'users' data is available -->
+ <div class="row gx-4 gx-lg-5 justify-content-center">
+    <div class="col-md-10 col-lg-8 col-xl-7">
+    <div class="my-5">
+        <fieldset class="border p-4 mb-4 position-relative">
+        <!-- <p>This page lists drivers who have completed their tests along with their Pass/Fail status.</p> -->
+        <legend class="w-auto px-0"><b>Driver's List</b></legend>
+        <p>Lists of drivers who have completed their tests along with their Pass/Fail status.</p> 
+        
+        <table class="table table-striped" id="driversTable">
+            <thead>
+                <tr>
+                    <th>Driver Name</th>
+                    <th>Test Type</th>
+                    <th>Pass/Fail</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be populated here by JavaScript -->
+            </tbody>
+        </table>
+    </fieldset>
+    </div>
+    </div>
+    </div>
+</main>
+
+<%- include('layouts/footer') -%>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date').setAttribute('min', today);
+
+    const timeSlots = document.querySelectorAll('.time-slot');
+    const timeInput = document.getElementById('timeInput');
+    const dateInput = document.getElementById('date');
+
+    timeSlots.forEach(slot => {
+        slot.addEventListener('click', () => {
+            if (!slot.classList.contains('btn-secondary')) {
+                timeInput.value = slot.dataset.time;
+                timeSlots.forEach(s => s.classList.remove('btn-success'));
+                slot.classList.add('btn-success');
+            }
+        });
+    });
+
+    dateInput.addEventListener('change', async () => {
+        const date = dateInput.value;
+        if (date) {
+            const response = await fetch(`/appointment/slots?date=${date}`);
+            const existingSlots = await response.json();
+
+            timeSlots.forEach(slot => {
+                if (existingSlots.includes(slot.dataset.time)) {
+                    slot.classList.add('btn-secondary');
+                    slot.disabled = true;
+                } else {
+                    slot.classList.remove('btn-secondary');
+                    slot.disabled = false;
+                }
+            });
+        }
+    });
+
+    const form = document.getElementById('appointmentForm');
+    form.addEventListener('submit', (event) => {
+        if (!form.checkValidity() || !timeInput.value) {
+            event.preventDefault();
+            event.stopPropagation();
+            form.classList.add('was-validated');
+
+            if (!timeInput.value) {
+                timeInput.closest('.mb-3').querySelector('.invalid-feedback').style.display = 'block';
+            } else {
+                timeInput.closest('.mb-3').querySelector('.invalid-feedback').style.display = 'none';
+            }
+        }
+    });
+
+    form.querySelectorAll('input, select').forEach(input => {
+        input.addEventListener('input', () => {
+            if (input.checkValidity()) {
+                input.classList.remove('is-invalid');
+            } else {
+                input.classList.add('is-invalid');
+            }
+        });
+    });
+
+
+
+    const fetchDrivers = async () => {
+    try {
+        const response = await fetch('/appointment/drivers'); // Ensure the correct route is used
+        if (!response.ok) throw new Error('Network response was not ok');
+        const drivers = await response.json();
+
+        // Populate the table with driver data
+        const tableBody = document.querySelector('#driversTable tbody');
+        tableBody.innerHTML = ''; // Clear any existing rows
+        console.log("abcd", drivers);
+        drivers.forEach(driver => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${driver.firstname} ${driver.lastname}</td>
+                <td>${driver.testType}</td>
+                <td>${driver.testResult ? 'PASS' : 'FAIL'}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error fetching drivers:', error);
+    }
+};
+
+    fetchDrivers();
+});
+</script>

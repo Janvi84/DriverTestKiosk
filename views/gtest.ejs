@@ -1,0 +1,198 @@
+<%- include('layouts/layout') -%>
+
+<main>
+    <!-- Page Header-->
+    <header class="masthead" style="background-image: url('assets/img/gtest.jpg')">
+        <div class="container position-relative px-4 px-lg-5">
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div class="col-md-10 col-lg-8 col-xl-7">
+                    <div class="post-heading">
+                        <h1>G Test, One Click Away!</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="mb-4">
+        <div class="container px-4 px-lg-5">
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div class="col-md-10 col-lg-8 col-xl-7">
+                    <% if (firstname && lastname && licenseno && cardetails) { %>
+                        <div class="my-5">
+                            <% function capitalizeFirstLetter(string) { return string.charAt(0).toUpperCase() + string.slice(1); } %>
+                            <legend class="w-auto px-0"><b>Welcome <%= capitalizeFirstLetter(firstname) %> <%= capitalizeFirstLetter(lastname) %>,</b></legend>
+                            <br><br>
+
+                      
+                       <!-- Display Test Result Section -->
+                        <div class="card mt-4">
+                            <div class="card-body">
+                                <legend class="w-auto px-0"><b>Test Result</b></legend>
+                                <fieldset class="border p-4 mb-4 position-relative">
+                                    <p class="card-text"><strong>Result:</strong> <span id="test-result">Loading...</span></p>
+                                    <p class="card-text"><strong>Comments:</strong> <span id="test-comment">Loading...</span></p>
+                                </fieldset>
+                            </div>
+                        </div> 
+                                    
+                            <div class="card">
+                                <div class="card-body">
+                                    <legend class="w-auto px-0"><b>Personal Information</b></legend>
+                                    <fieldset class="border p-4 mb-4 position-relative">
+                                        <p class="card-text">
+                                            <strong>First Name:</strong> <%= firstname %>
+                                        </p>
+                                        <p class="card-text">
+                                            <strong>Last Name:</strong> <%= lastname %>
+                                        </p>
+                                        <p class="card-text">
+                                            <strong>Licence Number:</strong> ****<%= licenseno.slice(-4) %>
+                                        </p>
+                                        <p class="card-text">
+                                            <strong>Age:</strong> <%= age %>
+                                        </p>
+                                    </fieldset>
+                                </div>
+                                <div class="card-body">
+                                    <legend class="w-auto px-0"><b>Car Information</b></legend>
+                                    <fieldset class="border p-4 mb-4 position-relative">
+                                        <p class="card-text">
+                                            <strong>Make:</strong> <%= cardetails.make %>
+                                        </p>
+                                        <p class="card-text">
+                                            <strong>Model:</strong> <%= cardetails.model %>
+                                        </p>
+                                        <p class="card-text">
+                                            <strong>Year:</strong> <%= cardetails.year %>
+                                        </p>
+                                        <p class="card-text">
+                                            <strong>Plate Number:</strong> <%= cardetails.platno %>
+                                        </p>
+                                    </fieldset>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="userDetails" class="mt-5">
+                            <!-- Section for fetched user data -->
+                        </div>
+
+                        <!-- Appointment Booking Section -->
+                        <div class="mt-5">
+                            <form id="datePickerForm" action="/gtest/slots" method="post">
+                                <fieldset class="border p-4 mb-4 position-relative">
+                                    <legend class="w-auto px-0"><b>Select Date for Appointment</b></legend>
+                                    <div class="form-floating mb-3">
+                                        <input class="form-control" id="appointmentDate" type="date" name="appointmentDate" required>
+                                        <label for="appointmentDate">Appointment Date</label>
+                                        <div class="invalid-feedback">Appointment Date is required.</div>
+                                    </div>
+                                    <!-- Submit Button for Date Selection -->
+                                    <button class="btn btn-primary text-uppercase" id="selectDateButton" type="submit">Select Date</button>
+                                </fieldset>
+                            </form>
+
+                            <!-- Available Slots Buttons (to be populated dynamically based on selection) -->
+                            <div class="mt-5" id="availableSlots">
+                                <div id="slotsContainer"></div>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <p>Please complete your profile information to access this page.</p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </main>
+    <%- include('layouts/footer') -%>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const datePickerForm = document.getElementById('datePickerForm');
+            const slotsContainer = document.getElementById('slotsContainer');
+            const availableSlots = document.getElementById('availableSlots');
+
+            const appointmentDate = document.getElementById('appointmentDate');
+            const selectDateButton = document.getElementById('selectDateButton');
+            
+                
+            function bookSlot(slotId,slotTime, appointmentDate) {
+    // Using SweetAlert for confirmation
+    Swal.fire({
+        title: 'Confirm Booking',
+        text: `Are you sure you want to book the appointment on ${appointmentDate} at ${slotTime}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, book it!',
+        cancelButtonText: 'No, cancel',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Send AJAX request to book the slot
+            fetch('/gtest/book', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ slotId, appointmentDate })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('Booked!', 'Your slot has been booked successfully.', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 5000);
+                } else {
+                    Swal.fire('Error!', 'Error booking slot: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error booking slot:', error);
+                Swal.fire('Error!', 'Error booking slot.', 'error');
+            });
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            Swal.fire('Cancelled', 'Your booking has been cancelled.', 'info');
+        }
+    });
+}
+
+if (datePickerForm) {
+    // Date Picker Form Submit
+    datePickerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const appointmentDate = document.getElementById('appointmentDate').value;
+
+        fetch('/gtest/slots', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ appointmentDate })
+        })
+        .then(response => response.json())
+        .then(slots => {
+            slotsContainer.innerHTML = '';
+
+            slots.forEach(slot => {
+                if (slot.isTimeSlotAvailable) {
+                    const slotButton = document.createElement('button');
+                    slotButton.classList.add('btn', 'btn-success', 'm-2');
+                    slotButton.textContent = slot.time;
+                    slotButton.dataset.slotId = slot._id;
+
+                    slotButton.addEventListener('click', function() {
+                        bookSlot(slot._id,slot.time, appointmentDate);
+                    });
+
+                    slotsContainer.appendChild(slotButton);
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching available slots:', error);
+        });
+    });
+}
+        });
+    </script>
+</main>
